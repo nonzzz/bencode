@@ -1,5 +1,9 @@
 package bencode
 
+import (
+	"errors"
+)
+
 const (
 	NumericStart   = 0x69 // i
 	StringDelim    = 0x3A // :
@@ -14,17 +18,29 @@ type decode struct {
 	end int
 }
 
-func isNumeric(code byte) bool {
+type decodeErorr struct{ error }
+
+// TODO support negative number
+// unsigned integer
+func IsNumeric(code byte) bool {
 	return code >= 48 && code < 58
 }
 
-func Decode(buf []byte) interface{} {
+func Decode(buf []byte) (s interface{}, err error) {
 	decode := &decode{
 		buf: buf,
 		end: len(buf),
 	}
 
-	return decode.next()
+	defer func() {
+		if r := recover(); r != nil {
+			if e, ok := r.(decodeErorr); ok {
+				err = e.error
+			}
+		}
+	}()
+
+	return decode.next(), nil
 }
 
 func (decode *decode) step() {
@@ -39,7 +55,7 @@ func (decode *decode) scanneBinaryLen(end int) int {
 	negative := 1
 	// ASCII
 	for i := start; i < end; i++ {
-		if isNumeric(decode.buf[i]) {
+		if IsNumeric(decode.buf[i]) {
 			sum = sum*10 + (int(decode.buf[i]) - 48)
 			continue
 		}
@@ -62,7 +78,7 @@ func (decode *decode) expect(kind byte) int {
 		}
 		step++
 	}
-	panic("Invalid data: Missing delimiter ")
+	panic(decodeErorr{error: errors.New("Invalid data: Missing delimiter ")})
 }
 
 func (decode *decode) next() interface{} {
