@@ -1,8 +1,6 @@
 package bencode
 
-import (
-	"errors"
-)
+import "errors"
 
 const (
 	NumericStart   = 0x69 // i
@@ -18,7 +16,7 @@ type decode struct {
 	end int
 }
 
-type decodeErorr struct{ error }
+type bencodeErorr struct{ error }
 
 // TODO support negative number
 // unsigned integer
@@ -34,7 +32,7 @@ func Decode(buf []byte) (s interface{}, err error) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			if e, ok := r.(decodeErorr); ok {
+			if e, ok := r.(bencodeErorr); ok {
 				err = e.error
 			}
 		}
@@ -78,7 +76,7 @@ func (decode *decode) expect(kind byte) int {
 		}
 		step++
 	}
-	panic(decodeErorr{error: errors.New("Invalid data: Missing delimiter ")})
+	panic(bencodeErorr{error: errors.New("Invalid data: Missing delimiter ")})
 }
 
 func (decode *decode) next() interface{} {
