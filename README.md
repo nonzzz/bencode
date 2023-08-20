@@ -1,6 +1,6 @@
 # Bencode
 
-A bencode decode and decode library implement by go.
+A bencode encode and decode library implement by go.
 
 - [x] Decode
 - [x] Encode
@@ -9,7 +9,7 @@ A bencode decode and decode library implement by go.
 
 ## LICENSE
 
-[MIT](./decode.go)
+[MIT](./LICENSE)
 
 ## Author
 
