@@ -1,6 +1,11 @@
 package bencode
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"reflect"
+	"strings"
+)
 
 const (
 	NumericStart   = 0x69 // i
@@ -9,6 +14,8 @@ const (
 	SliceStart     = 0x6c // l
 	EndOfType      = 0x65 // e
 )
+
+const bencodeSymbol = "bencode" // tag
 
 type decode struct {
 	buf []byte
@@ -130,4 +137,91 @@ func (decode *decode) convertBinary() []byte {
 	}
 	decode.step()
 	return decode.buf[step+1 : decode.pos]
+}
+
+type filedInfo struct {
+	Alias   string
+	TagName string
+}
+
+func scannTagField(field reflect.StructField) filedInfo {
+	alias := field.Name
+	if tag, ok := field.Tag.Lookup(bencodeSymbol); ok {
+		tpl := strings.Split(tag, ",")
+		// TODO
+		if len(tpl) > 0 {
+			alias = strings.TrimSpace(tpl[0])
+		}
+	}
+
+	return filedInfo{
+		Alias:   alias,
+		TagName: field.Name,
+	}
+}
+
+func bindTag(decodedMap map[string]reflect.Value, stu interface{}) {
+	stuType := reflect.TypeOf(stu)
+	stuKind := stuType.Kind()
+
+	if stuKind == reflect.Invalid {
+		return
+	}
+
+	if stuKind != reflect.Ptr {
+		return
+	}
+
+	stuType = stuType.Elem()
+	stuKind = stuType.Kind()
+
+	if stuKind != reflect.Struct {
+		return
+	}
+
+	stuValue := reflect.ValueOf(stu).Elem()
+
+	// TODO
+	// convert := func(k reflect.Kind, value reflect.Value) reflect.Value {
+	// 	// fmt.Println(value)
+	// 	// value.Type()
+	// 	// t := reflect.ValueOf(value)
+	// 	// fmt.Println(t.Type().Kind())
+	// 	// tt := value.Type()
+	// 	// fmt.Println(reflect.ValueOf(tt))
+	// }
+
+	for i := 0; i < stuType.NumField(); i++ {
+		field := stuType.Field(i)
+		info := scannTagField(field)
+		each := stuValue.FieldByName(info.TagName)
+		if value, ok := decodedMap[info.Alias]; ok {
+			each.Set(value)
+		}
+	}
+
+}
+
+func UnMarshal(data interface{}, stu interface{}) error {
+	value := reflect.ValueOf(data)
+
+	kind := value.Kind()
+
+	if kind == reflect.Invalid {
+		return errors.New("can't process empty value")
+	}
+
+	if kind != reflect.Map {
+		return fmt.Errorf("can't process type: %s ", kind)
+	}
+
+	var decodedMap map[string]reflect.Value
+	decodedMap = make(map[string]reflect.Value, value.Len())
+	iter := value.MapRange()
+	for iter.Next() {
+		decodedMap[iter.Key().String()] = iter.Value()
+	}
+
+	bindTag(decodedMap, stu)
+	return nil
 }

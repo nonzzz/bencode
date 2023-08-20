@@ -4,7 +4,7 @@ A bencode encode and decode library implement by go.
 
 - [x] Decode
 - [x] Encode
-- [ ] Marshal
+- [ ] UnMarshal
 
 
 ## LICENSE
