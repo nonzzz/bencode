@@ -94,9 +94,6 @@ func (encode *encode) encodeSlice(value reflect.Value) {
 	encode.output = append(encode.output, EndOfType)
 }
 
-// TODO
-func (encode *encode) encodeBinary() {}
-
 func (encode *encode) encodeNumeric(s string) {
 	var sb strings.Builder
 	sb.WriteByte(NumericStart)

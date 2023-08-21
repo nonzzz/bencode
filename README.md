@@ -7,6 +7,14 @@ A bencode encode and decode library implement by go.
 - [x] UnMarshal
 
 
+## Install
+
+```bash
+
+go get github.com/nonzzz/bencode
+
+```
+
 ## LICENSE
 
 [MIT](./LICENSE)
