@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -160,7 +161,7 @@ func scannTagField(field reflect.StructField) filedInfo {
 	}
 }
 
-func bindTag(decodedMap map[string]reflect.Value, stu interface{}) {
+func bindTag(decodedMap map[string]interface{}, stu interface{}) {
 	stuType := reflect.TypeOf(stu)
 	stuKind := stuType.Kind()
 
@@ -182,21 +183,44 @@ func bindTag(decodedMap map[string]reflect.Value, stu interface{}) {
 	stuValue := reflect.ValueOf(stu).Elem()
 
 	// TODO
-	// convert := func(k reflect.Kind, value reflect.Value) reflect.Value {
-	// 	// fmt.Println(value)
-	// 	// value.Type()
-	// 	// t := reflect.ValueOf(value)
-	// 	// fmt.Println(t.Type().Kind())
-	// 	// tt := value.Type()
-	// 	// fmt.Println(reflect.ValueOf(tt))
-	// }
+	convert := func(k reflect.Kind, data interface{}) reflect.Value {
+		value := reflect.ValueOf(data)
+		kind := value.Kind()
+		switch k {
+		case reflect.String:
+			if kind == reflect.Slice || kind == reflect.Array {
+				if value.Type().String() == "[]uint8" {
+					return reflect.ValueOf(string(value.Bytes()))
+				}
+			}
+			if kind == reflect.Int {
+				return reflect.ValueOf(strconv.FormatInt(value.Int(), 10))
+			}
+		}
+		return reflect.ValueOf(data)
+	}
 
 	for i := 0; i < stuType.NumField(); i++ {
 		field := stuType.Field(i)
 		info := scannTagField(field)
 		each := stuValue.FieldByName(info.TagName)
 		if value, ok := decodedMap[info.Alias]; ok {
-			each.Set(value)
+			t := reflect.TypeOf(value)
+			if !t.AssignableTo(each.Type()) {
+
+				if each.Kind() == reflect.Struct && t.Kind() == reflect.Map {
+					if each.CanInterface() {
+						bindTag(value.(map[string]interface{}), each.Addr().Interface())
+					}
+				} else {
+					val := convert(each.Kind(), value)
+					each.Set(val)
+				}
+
+			} else {
+				each.Set(reflect.ValueOf(value))
+			}
+
 		}
 	}
 
@@ -215,11 +239,10 @@ func UnMarshal(data interface{}, stu interface{}) error {
 		return fmt.Errorf("can't process type: %s ", kind)
 	}
 
-	var decodedMap map[string]reflect.Value
-	decodedMap = make(map[string]reflect.Value, value.Len())
+	decodedMap := make(map[string]interface{}, value.Len())
 	iter := value.MapRange()
 	for iter.Next() {
-		decodedMap[iter.Key().String()] = iter.Value()
+		decodedMap[iter.Key().String()] = iter.Value().Interface()
 	}
 
 	bindTag(decodedMap, stu)
