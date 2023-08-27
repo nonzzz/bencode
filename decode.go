@@ -1,7 +1,6 @@
 package bencode
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -162,7 +161,7 @@ type filedInfo struct {
 	TagName string
 }
 
-func scannTagField(field reflect.StructField) filedInfo {
+func scanTagField(field reflect.StructField) filedInfo {
 	alias := field.Name
 	if tag, ok := field.Tag.Lookup(bencodeSymbol); ok {
 		tpl := strings.Split(tag, ",")
@@ -178,23 +177,23 @@ func scannTagField(field reflect.StructField) filedInfo {
 	}
 }
 
-func bindTag(decodedMap map[string]interface{}, stu interface{}) {
+func bindTag(decodedMap map[string]interface{}, stu interface{}) error {
 	stuType := reflect.TypeOf(stu)
 	stuKind := stuType.Kind()
 
 	if stuKind == reflect.Invalid {
-		return
+		return fmt.Errorf("can't process empty value")
 	}
 
 	if stuKind != reflect.Ptr {
-		return
+		return fmt.Errorf("invalid stu type: should be pointer")
 	}
 
 	stuType = stuType.Elem()
 	stuKind = stuType.Kind()
 
 	if stuKind != reflect.Struct {
-		return
+		return fmt.Errorf("invalid stu type: should be struct")
 	}
 
 	stuValue := reflect.ValueOf(stu).Elem()
@@ -219,7 +218,7 @@ func bindTag(decodedMap map[string]interface{}, stu interface{}) {
 
 	for i := 0; i < stuType.NumField(); i++ {
 		field := stuType.Field(i)
-		info := scannTagField(field)
+		info := scanTagField(field)
 		each := stuValue.FieldByName(info.TagName)
 		if value, ok := decodedMap[info.Alias]; ok {
 			t := reflect.TypeOf(value)
@@ -240,7 +239,7 @@ func bindTag(decodedMap map[string]interface{}, stu interface{}) {
 
 		}
 	}
-
+	return nil
 }
 
 func UnMarshal(data interface{}, stu interface{}) error {
@@ -249,7 +248,7 @@ func UnMarshal(data interface{}, stu interface{}) error {
 	kind := value.Kind()
 
 	if kind == reflect.Invalid {
-		return errors.New("can't process empty value")
+		return fmt.Errorf("can't process empty value")
 	}
 
 	if kind != reflect.Map {
@@ -262,6 +261,5 @@ func UnMarshal(data interface{}, stu interface{}) error {
 		decodedMap[iter.Key().String()] = iter.Value().Interface()
 	}
 
-	bindTag(decodedMap, stu)
-	return nil
+	return bindTag(decodedMap, stu)
 }
