@@ -9,10 +9,17 @@ func TestDecodeNumeric(t *testing.T) {
 	input := "i-42e"
 	expected := -42
 	decoded, _ := Decode([]byte(input))
-
 	value, _ := decoded.(int)
 	if value != expected {
 		t.Fatalf("%d != %d", value, expected)
+	}
+}
+
+func TestDecodeFailed(t *testing.T) {
+	input := "-42e"
+	_, err := Decode([]byte(input))
+	if err.Error() != "Invalid data: Missing delimiter ':'" {
+		t.Fatalf("%s != %s", err.Error(), "Invalid data: Missing delimiter ':'")
 	}
 }
 

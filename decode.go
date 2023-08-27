@@ -14,6 +14,8 @@ const (
 	DirectroyStart = 0x64 // d
 	SliceStart     = 0x6c // l
 	EndOfType      = 0x65 // e
+	PlusSign       = 0x2B // +
+	MinusSign      = 0x2D // -
 )
 
 const bencodeSymbol = "bencode" // tag
@@ -26,9 +28,7 @@ type decode struct {
 
 type bencodeErorr struct{ error }
 
-// TODO support negative number
-// unsigned integer
-func IsNumeric(code byte) bool {
+func isNumeric(code byte) bool {
 	return code >= 48 && code < 58
 }
 
@@ -55,25 +55,32 @@ func (decode *decode) step() {
 	}
 }
 
-func (decode *decode) scanneBinaryLen(end int) int {
-	start := decode.pos
+func (decode *decode) at(pos int) byte {
+	if pos < decode.end {
+		return decode.buf[pos]
+	}
+	return 0
+}
+
+// No need to eat operate kind
+func (decode *decode) scanBinaryLen(end int) int {
 	sum := 0
-	negative := 1
 	// ASCII
-	for i := start; i < end; i++ {
-		if IsNumeric(decode.buf[i]) {
-			sum = sum*10 + (int(decode.buf[i]) - 48)
-			continue
-		}
-		if i == start && decode.buf[start] == 45 {
-			negative = -1
-			continue
-		}
-		if decode.buf[start] == 46 {
+	for {
+		if decode.pos == end {
 			break
 		}
+		if isNumeric(decode.buf[decode.pos]) {
+			sum = sum*10 + (int(decode.buf[decode.pos]) - 48)
+		} else {
+			if decode.buf[decode.pos] == 46 {
+				break
+			}
+			panic(bencodeErorr{error: fmt.Errorf("invalid binary len: wrong char '%s'", string(decode.buf[decode.pos]))})
+		}
+		decode.pos++
 	}
-	return sum * negative
+	return sum
 }
 
 func (decode *decode) expect(kind byte) int {
@@ -84,13 +91,12 @@ func (decode *decode) expect(kind byte) int {
 		}
 		step++
 	}
-	panic(bencodeErorr{error: errors.New("Invalid data: Missing delimiter ")})
+	panic(bencodeErorr{error: fmt.Errorf("Invalid data: Missing delimiter '%s'", string(kind))})
 }
 
 func (decode *decode) next() interface{} {
 	switch decode.buf[decode.pos] {
 	case NumericStart:
-		decode.step()
 		return decode.convertNumeric()
 	case DirectroyStart:
 		decode.step()
@@ -122,17 +128,28 @@ func (decode *decode) convertSlice() (list []interface{}) {
 
 func (decode *decode) convertNumeric() int {
 	step := decode.expect(EndOfType)
-	num := decode.scanneBinaryLen(step)
+	negative := 1
+	//  consume all of operate symbol
+	if decode.at(decode.pos+1) == MinusSign {
+		negative = -1
+		decode.step()
+	}
+	if decode.at(decode.pos+1) == PlusSign {
+		step -= 1
+		decode.step()
+	}
+	decode.step()
+	num := decode.scanBinaryLen(step)
 	for i := decode.pos; i < step; i++ {
 		decode.step()
 	}
 	decode.step()
-	return num
+	return num * negative
 }
 
 func (decode *decode) convertBinary() []byte {
 	step := decode.expect(StringDelim)
-	l := decode.scanneBinaryLen(step)
+	l := decode.scanBinaryLen(step)
 	for i := decode.pos; i < (step + l); i++ {
 		decode.step()
 	}
