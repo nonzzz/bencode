@@ -134,7 +134,6 @@ func (decode *decode) convertNumeric() int {
 		decode.step()
 	}
 	if decode.at(decode.pos+1) == PlusSign {
-		step -= 1
 		decode.step()
 	}
 	decode.step()
@@ -226,7 +225,7 @@ func bindTag(decodedMap map[string]interface{}, stu interface{}) error {
 
 				if each.Kind() == reflect.Struct && t.Kind() == reflect.Map {
 					if each.CanInterface() {
-						bindTag(value.(map[string]interface{}), each.Addr().Interface())
+						return bindTag(value.(map[string]interface{}), each.Addr().Interface())
 					}
 				} else {
 					val := convert(each.Kind(), value)

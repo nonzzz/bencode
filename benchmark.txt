@@ -1,0 +1,16 @@
+goos: windows
+goarch: amd64
+pkg: github.com/nonzzz/bencode
+cpu: Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz
+BenchmarkEncode-12    	   10000	     34307 ns/op	  145993 B/op	      80 allocs/op
+BenchmarkEncode-12    	   10000	     26206 ns/op	  145992 B/op	      80 allocs/op
+BenchmarkEncode-12    	   10000	     28097 ns/op	  145992 B/op	      80 allocs/op
+BenchmarkEncode-12    	   10000	     26583 ns/op	  145992 B/op	      80 allocs/op
+BenchmarkEncode-12    	   10000	     27728 ns/op	  145992 B/op	      80 allocs/op
+BenchmarkDecode-12    	   10000	     43816 ns/op	    1088 B/op	      29 allocs/op
+BenchmarkDecode-12    	   10000	     43490 ns/op	    1088 B/op	      29 allocs/op
+BenchmarkDecode-12    	   10000	     43359 ns/op	    1088 B/op	      29 allocs/op
+BenchmarkDecode-12    	   10000	     43092 ns/op	    1088 B/op	      29 allocs/op
+BenchmarkDecode-12    	   10000	     43342 ns/op	    1088 B/op	      29 allocs/op
+PASS
+ok  	github.com/nonzzz/bencode	3.863s
