@@ -59,16 +59,15 @@ func (encode *encode) next(input interface{}) {
 	}
 }
 
-// Someone need convert WTF string(non-standard ASCLL) if necessary.
+// Someone need convert WTF string(non-standard ASCII) if necessary.
 
 func (encode *encode) encodeString(s string) {
 	var sb strings.Builder
-	menu := []byte(s)
-	l := strconv.Itoa(len(menu))
+	l := strconv.Itoa(len(s))
 	sb.WriteString(l)
 	sb.WriteByte(StringDelim)
 	sb.WriteString(s)
-	encode.output = append(encode.output, []byte(sb.String())...)
+	encode.output = append(encode.output, sb.String()...)
 }
 
 // Should sort directory
@@ -95,9 +94,9 @@ func (encode *encode) encodeSlice(value reflect.Value) {
 }
 
 func (encode *encode) encodeNumeric(s string) {
-	var sb strings.Builder
-	sb.WriteByte(NumericStart)
-	sb.WriteString(s)
-	sb.WriteByte(EndOfType)
-	encode.output = append(encode.output, []byte(sb.String())...)
+	content := make([]byte, 0, 2+len(s))
+	content = append(content, NumericStart)
+	content = append(content, s...)
+	content = append(content, EndOfType)
+	encode.output = append(encode.output, content...)
 }

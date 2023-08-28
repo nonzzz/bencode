@@ -4,21 +4,15 @@ pkg: github.com/nonzzz/bencode
 cpu: Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz
           │ benchmark.txt │
           │    sec/op     │
-Encode-12    27.73µ ± ∞ ¹
-Decode-12    43.36µ ± ∞ ¹
-geomean      34.67µ
+Encode-12    18.59µ ± ∞ ¹
 ¹ need >= 6 samples for confidence interval at level 0.95
 
           │ benchmark.txt │
           │     B/op      │
-Encode-12   142.6Ki ± ∞ ¹
-Decode-12   1.062Ki ± ∞ ¹
-geomean     12.31Ki
+Encode-12   86.27Ki ± ∞ ¹
 ¹ need >= 6 samples for confidence interval at level 0.95
 
           │ benchmark.txt │
           │   allocs/op   │
-Encode-12     80.00 ± ∞ ¹
-Decode-12     29.00 ± ∞ ¹
-geomean       48.17
+Encode-12     70.00 ± ∞ ¹
 ¹ need >= 6 samples for confidence interval at level 0.95
