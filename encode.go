@@ -12,10 +12,6 @@ import (
 	"strings"
 )
 
-// We accept user pass a interface. I don't want to using generic.
-// Will using reflection. Although it will have a performance loss,
-// but it worth.
-
 type encode struct {
 	output []byte
 }

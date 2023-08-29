@@ -1,6 +1,6 @@
 # Bencode
 
-A bencode encode and decode library implement by go.
+A bencode encode and decode library implement by go. Better performance and more friendly.
 
 - [x] Decode
 - [x] Encode

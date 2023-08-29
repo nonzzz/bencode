@@ -128,7 +128,7 @@ func (decode *decode) convertSlice() (list []interface{}) {
 func (decode *decode) convertNumeric() int {
 	step := decode.expect(EndOfType)
 	negative := 1
-	//  consume all of operate symbol
+	// consume next operate symbol
 	if decode.at(decode.pos+1) == MinusSign {
 		negative = -1
 		decode.step()
