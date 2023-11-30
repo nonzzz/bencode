@@ -73,10 +73,10 @@ func (decode *decode) scanBinaryLen(end int) int {
 		if decode.pos == end {
 			break
 		}
-		if isNumeric(decode.buf[decode.pos]) {
-			sum = sum*10 + (int(decode.buf[decode.pos]) - 48)
+		if isNumeric(decode.current()) {
+			sum = sum*10 + (int(decode.current()) - 48)
 		} else {
-			if decode.buf[decode.pos] == 46 {
+			if decode.current() == 46 {
 				break
 			}
 			panic(bencodeErorr{error: fmt.Errorf("invalid binary len: wrong char '%s'", string(decode.buf[decode.pos]))})
@@ -113,7 +113,7 @@ func (decode *decode) next() interface{} {
 func (decode *decode) convertDirectory() (directory map[string]interface{}) {
 	decode.advance()
 	directory = make(map[string]interface{})
-	for decode.buf[decode.pos] != EndOfType {
+	for decode.current() != EndOfType {
 		binary := decode.convertBinary()
 		directory[string(binary)] = decode.next()
 	}
@@ -122,7 +122,7 @@ func (decode *decode) convertDirectory() (directory map[string]interface{}) {
 }
 func (decode *decode) convertSlice() (list []interface{}) {
 	decode.advance()
-	for decode.buf[decode.pos] != EndOfType {
+	for decode.current() != EndOfType {
 		list = append(list, decode.next())
 	}
 	decode.advance()
