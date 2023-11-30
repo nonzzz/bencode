@@ -23,7 +23,7 @@ func TestDecodeFailed(t *testing.T) {
 	}
 }
 
-func TestDecodeStrin(t *testing.T) {
+func TestDecodeString(t *testing.T) {
 	input := "4:spam"
 	expected := "spam"
 	decoded, _ := Decode([]byte(input))

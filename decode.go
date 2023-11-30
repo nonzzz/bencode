@@ -48,10 +48,14 @@ func Decode(buf []byte) (s interface{}, err error) {
 	return decode.next(), nil
 }
 
-func (decode *decode) step() {
+func (decode *decode) advance() {
 	if decode.pos < decode.end {
 		decode.pos++
 	}
+}
+
+func (decode *decode) current() byte {
+	return decode.at(decode.pos)
 }
 
 func (decode *decode) at(pos int) byte {
@@ -77,7 +81,7 @@ func (decode *decode) scanBinaryLen(end int) int {
 			}
 			panic(bencodeErorr{error: fmt.Errorf("invalid binary len: wrong char '%s'", string(decode.buf[decode.pos]))})
 		}
-		decode.pos++
+		decode.advance()
 	}
 	return sum
 }
@@ -85,7 +89,7 @@ func (decode *decode) scanBinaryLen(end int) int {
 func (decode *decode) expect(kind byte) int {
 	step := decode.pos
 	for step < decode.end {
-		if decode.buf[step] == kind {
+		if decode.at(step) == kind {
 			return step
 		}
 		step++
@@ -94,14 +98,12 @@ func (decode *decode) expect(kind byte) int {
 }
 
 func (decode *decode) next() interface{} {
-	switch decode.buf[decode.pos] {
+	switch decode.current() {
 	case NumericStart:
 		return decode.convertNumeric()
 	case DirectroyStart:
-		decode.step()
 		return decode.convertDirectory()
 	case SliceStart:
-		decode.step()
 		return decode.convertSlice()
 	default:
 		return decode.convertBinary()
@@ -109,50 +111,54 @@ func (decode *decode) next() interface{} {
 }
 
 func (decode *decode) convertDirectory() (directory map[string]interface{}) {
+	decode.advance()
 	directory = make(map[string]interface{})
 	for decode.buf[decode.pos] != EndOfType {
 		binary := decode.convertBinary()
 		directory[string(binary)] = decode.next()
 	}
-	decode.step()
+	decode.advance()
 	return directory
 }
 func (decode *decode) convertSlice() (list []interface{}) {
+	decode.advance()
 	for decode.buf[decode.pos] != EndOfType {
 		list = append(list, decode.next())
 	}
-	decode.step()
+	decode.advance()
 	return list
 }
 
 func (decode *decode) convertNumeric() int {
 	step := decode.expect(EndOfType)
 	negative := 1
+	decode.advance()
 	// consume next operate symbol
-	if decode.at(decode.pos+1) == MinusSign {
+	switch decode.current() {
+	case MinusSign:
 		negative = -1
-		decode.step()
+		decode.advance()
+	case PlusSign:
+		decode.advance()
+	default:
+		if !isNumeric(decode.current()) {
+			panic(bencodeErorr{error: fmt.Errorf("invalid data: unsupported char '%s'", string(decode.current()))})
+		}
 	}
-	if decode.at(decode.pos+1) == PlusSign {
-		decode.step()
-	}
-	decode.step()
 	num := decode.scanBinaryLen(step)
-	for i := decode.pos; i < step; i++ {
-		decode.step()
-	}
-	decode.step()
+	decode.advance()
 	return num * negative
 }
 
 func (decode *decode) convertBinary() []byte {
 	step := decode.expect(StringDelim)
 	l := decode.scanBinaryLen(step)
-	for i := decode.pos; i < (step + l); i++ {
-		decode.step()
+	decode.advance() // eat StringDelim
+	start := decode.pos
+	for i := 0; i < l; i++ {
+		decode.advance()
 	}
-	decode.step()
-	return decode.buf[step+1 : decode.pos]
+	return decode.buf[start:decode.pos]
 }
 
 type filedInfo struct {
